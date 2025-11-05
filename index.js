@@ -6,7 +6,7 @@ import mongoose from 'mongoose';
 import {farmerRouter} from './routers/farmer.js'
 import {companyRouter} from './routers/company.js'
 app.use(express.json());
-app.use('/famer',farmerRouter);
+app.use('/farmer',farmerRouter);
 app.use('/company',companyRouter);
 
 async function main(){

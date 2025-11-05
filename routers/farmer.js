@@ -16,6 +16,7 @@ farmerRouter.post('/signup',async(req,res)=>{
             message:'Farmer already exists'
         })
     }
+
     const hashedPass = await bcrypt.hash(farmerPassword,3);
 
     await farmerModel.create({
