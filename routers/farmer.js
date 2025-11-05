@@ -1,7 +1,8 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { Router } from 'express';
-import { farmerModel } from '../db.js';
+import { createWasteModel, farmerModel } from '../db.js';
+import farmerAuth from '../middleware/farmer.js';
 const FARMER_SECRET =process.env.FARMER_SECRET
 const farmerRouter = Router()
 
@@ -55,9 +56,34 @@ farmerRouter.post('/login',async(req,res)=>{
         })
     }
 })
+farmerRouter.use(farmerAuth);
+farmerRouter.post('/creteWaste',async (req,res)=>{
+    const farmerId = req.farmerId;
+    const {wasteType,wasteQuantity,wasteDescription,wasteImage} = req.body;
 
+   const waste = await createWasteModel.create({
+        wasteType,
+        wasteQuantity,
+        wasteDescription,
+        wasteImage,
+        farmer:farmerId
+    })
+    res.json({
+        message:"waste created successfully",
+        WasteId: waste._id
+    })
+})
 
-
+farmerRouter.get('/wasteList',async (req,res)=>{
+    const farmerId = req.farmerId;
+    
+    const wasteList = await createWasteModel.find({
+        farmer: farmerId
+    })
+    res.json({
+        wasteList
+    })
+})
 
 
 export{farmerRouter}

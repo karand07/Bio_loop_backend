@@ -1,8 +1,8 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { Router } from 'express';
-import { companyModel,allocatedWasteModel } from '../db.js';
-
+import { companyModel,allocatedWasteModel, createWasteModel } from '../db.js';
+import {companyAuth} from '../middleware/company.js'
 const COMPANY_SECRET= process.env.COMPANY_SECRET
 const companyRouter = Router();
 
@@ -52,8 +52,28 @@ companyRouter.post('/login',async(req,res)=>{
     }
 })
 
+companyRouter.use(companyAuth);
 
+companyRouter.get('/wasteList',async (req,res)=>{
+ const wasteList = await  createWasteModel.find({})
+res.json({
+    wasteList
+})
+})
 
+companyRouter.post('/allocateWaste',async (req,res)=>{
+    const companyId = req.companyId;
+    const {wasteId,farmerId} = req.body;
 
+    const allocatedWaste = await allocatedWasteModel.create({
+        waste:wasteId,
+        company:companyId,
+        farmer:farmerId
+    })
+    res.json({
+        message:'waste allocated successfully',
+        allocatedWasteId:allocatedWaste._id
+    })
+})
 
 export{companyRouter}

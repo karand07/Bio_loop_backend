@@ -100,15 +100,10 @@ const createWasteSchema = new Schema({
       ref: "Farmer", // Reference to Farmer collection
       required: true,
     },
-    wasteName: {
-      type: String,
-      required: true,
-      trim: true,
-    },
     wasteType: {
       type: String,
       required: true,
-      enum: ["Organic", "Plastic", "Metal", "Paper", "Other"],
+      enum: ["Crop Waste", "Animal Waste", "Chemical Waste", "Domestic and Miscellaneous Farm Waste", "Other"],
       default: "Other",
     },
     wasteQuantity: {
