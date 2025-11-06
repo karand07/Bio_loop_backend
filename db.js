@@ -126,9 +126,79 @@ const createWasteSchema = new Schema({
      isAllocated: {
     type: Boolean,
     default: false
+  },
+  isAccepted: {         // <-- New field
+    type: Boolean,
+    default: false
   }
 })
+
+const adminSchema = new Schema({
+  adminName:{
+    type: String,
+      required: true,
+      trim: true,
+  },
+  adminEmail: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    adminPassword:{
+      type: String,
+      required: true,
+      minlength: 6,
+    },
+    adminAdhar:{
+      type:String,
+      required:true,
+    }
+})
+
+const orderSchema = new Schema({
+  wasteId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "createWaste",
+    required: true,
+  },
+  farmerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "farmer",
+    required: true,
+  },
+  companyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "company",
+  },
+  adminId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "admin",
+    required: true,
+  },
+  price: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+  orderStatus: {
+    type: String,
+    enum: ["Pending", "Approved", "In Progress", "Completed", "Cancelled"],
+    default: "Pending",
+  },
+  paymentStatus: {
+    type: String,
+    enum: ["Unpaid", "Paid"],
+    default: "Unpaid",
+  },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+});
+
 
 export const farmerModel = mongoose.model('farmer',farmerSchema)
 export const companyModel= mongoose.model('company',companySchema)
 export const createWasteModel = mongoose.model('createWaste',createWasteSchema)
+export const adminModel = mongoose.model('admin',adminSchema)
+export const orderModel = mongoose.model('order',orderSchema)

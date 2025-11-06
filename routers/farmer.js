@@ -86,4 +86,19 @@ farmerRouter.get('/wasteList',async (req,res)=>{
 })
 
 
+// 🧑‍🌾 1️⃣ Get all orders for a specific farmer
+farmerRouter.get("/orders", farmerAuth, async (req, res) => {
+  try {
+    const farmerId = req.farmer.id; // farmerAuth middleware sets this
+    const orders = await orderModel.find({ farmerId })
+      .populate("wasteId")
+      .populate("companyId")
+      .populate("adminId");
+
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export{farmerRouter}
