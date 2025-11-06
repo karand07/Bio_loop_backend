@@ -196,7 +196,6 @@ const orderSchema = new Schema({
   updatedAt: { type: Date, default: Date.now },
 });
 
-
 export const farmerModel = mongoose.model('farmer',farmerSchema)
 export const companyModel= mongoose.model('company',companySchema)
 export const createWasteModel = mongoose.model('createWaste',createWasteSchema)

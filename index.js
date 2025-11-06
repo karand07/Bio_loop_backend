@@ -5,9 +5,11 @@ const port = 3000;
 import mongoose from 'mongoose';
 import {farmerRouter} from './routers/farmer.js'
 import {companyRouter} from './routers/company.js'
+import { adminRouter } from './routers/admin.js';
 app.use(express.json());
 app.use('/farmer',farmerRouter);
 app.use('/company',companyRouter);
+app.use('/admin',adminRouter)
 
 async function main(){
     await mongoose.connect(process.env.MONGO_URL)
