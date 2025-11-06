@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { Router } from 'express';
-import { companyModel,allocatedWasteModel, createWasteModel } from '../db.js';
+import { companyModel, createWasteModel } from '../db.js';
 import {companyAuth} from '../middleware/company.js'
 const COMPANY_SECRET= process.env.COMPANY_SECRET
 const companyRouter = Router();
@@ -55,25 +55,42 @@ companyRouter.post('/login',async(req,res)=>{
 companyRouter.use(companyAuth);
 
 companyRouter.get('/wasteList',async (req,res)=>{
- const wasteList = await  createWasteModel.find({})
+ const wasteList = await  createWasteModel.find({isAllocated:false})
 res.json({
     wasteList
 })
 })
 
-companyRouter.post('/allocateWaste',async (req,res)=>{
-    const companyId = req.companyId;
-    const {wasteId,farmerId} = req.body;
+companyRouter.put('/acceptWaste/:id', async (req, res) => {
+  const companyId = req.companyId;
 
-    const allocatedWaste = await allocatedWasteModel.create({
-        waste:wasteId,
-        company:companyId,
-        farmer:farmerId
-    })
+  try {
+    const waste = await createWasteModel.findByIdAndUpdate(
+      req.params.id,
+      { isAllocated: true, companyId },
+      { new: true }
+    );
+
+    if (!waste) return res.status(404).json({ message: 'Waste not found' });
+
+    res.json({ message: 'Waste allocated successfully', waste });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+companyRouter.get('/allocatedWasteList',async (req,res)=>{
+    const companyId = req.companyId;
+    const allocatedWasteList = await createWasteModel.find({companyId,isAllocated:true})
+
+    if(!allocatedWasteList){
+        return res.json({
+            messagage:"no waste allocated found"
+        })
+    }
+
     res.json({
-        message:'waste allocated successfully',
-        allocatedWasteId:allocatedWaste._id
+        allocatedWasteList
     })
 })
-
 export{companyRouter}

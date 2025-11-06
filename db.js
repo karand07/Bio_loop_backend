@@ -100,6 +100,10 @@ const createWasteSchema = new Schema({
       ref: "Farmer", // Reference to Farmer collection
       required: true,
     },
+    companyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Company'
+  },
     wasteType: {
       type: String,
       required: true,
@@ -118,27 +122,13 @@ const createWasteSchema = new Schema({
     wasteImage: {
       type: String, // URL or file path
       default: "",
-    }
-})
-const allocatedWasteSchema = new Schema({
-     waste: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Waste", // Reference to Waste collection
-      required: true,
     },
-    company: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Company", // Reference to Company collection
-      required: true,
-    },
-    farmer: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Farmer", // Optional, helps quick lookup
-      required: true,
-    }
+     isAllocated: {
+    type: Boolean,
+    default: false
+  }
 })
 
 export const farmerModel = mongoose.model('farmer',farmerSchema)
 export const companyModel= mongoose.model('company',companySchema)
 export const createWasteModel = mongoose.model('createWaste',createWasteSchema)
-export const allocatedWasteModel = mongoose.model('allocatedWeste',allocatedWasteSchema) 
