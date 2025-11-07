@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { Router } from 'express';
-import { adminModel } from '../db.js';
+import { adminModel, createWasteModel, orderModel } from '../db.js';
 import adminAuth from '../middleware/admin.js'; 
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET
@@ -22,12 +22,13 @@ adminRouter.post('/signup',async(req,res)=>{
     
         const hashedPass = await bcrypt.hash(adminPassword,10);
     
-        await farmerModel.create({
-           adminName,
-           adminEmail,
-           adminPassword:hashedPass,
-           adminAdhar
-        })
+        await adminModel.create({
+   adminName,
+   adminEmail,
+   adminPassword: hashedPass,
+   adminAdhar
+})
+
         res.json({
             message:'registration completed succesfully'
         })
@@ -74,7 +75,8 @@ adminRouter.post("/create-order/:wasteId", adminAuth, async (req, res) => {
   try {
     const { price } = req.body;
     const { wasteId } = req.params;
-    const adminId = req.admin.id; // assuming adminAuth sets req.admin
+   const adminId = req.adminId; // ✅ matches adminAuth
+ // assuming adminAuth sets req.admin
 
     const waste = await createWasteModel.findById(wasteId);
     if (!waste) return res.status(404).json({ message: "Waste not found" });

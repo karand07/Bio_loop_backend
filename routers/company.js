@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { Router } from 'express';
-import { companyModel, createWasteModel } from '../db.js';
+import { companyModel, createWasteModel,orderModel } from '../db.js';
 import companyAuth from '../middleware/company.js'
 const COMPANY_SECRET= process.env.COMPANY_SECRET
 const companyRouter = Router();
@@ -97,7 +97,7 @@ companyRouter.get('/allocatedWasteList',async (req,res)=>{
 //show all orders
 companyRouter.get("/orders", async (req, res) => {
   try {
-    const companyId = req.company.id; // companyAuth middleware sets this
+    const companyId = req.companyId; // companyAuth middleware sets this
     const orders = await orderModel.find({ companyId })
       .populate("wasteId")
       .populate("farmerId")
