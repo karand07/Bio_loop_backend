@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { Router } from 'express';
-import { companyModel, createWasteModel,orderModel } from '../db.js';
+import { companyModel, createWasteModel,orderModel , farmerModel } from '../db.js';
 import companyAuth from '../middleware/company.js'
 const COMPANY_SECRET= process.env.COMPANY_SECRET
 const companyRouter = Router();
@@ -94,10 +94,9 @@ companyRouter.get('/allocatedWasteList',async (req,res)=>{
     })
 })
 
-//show all orders
 companyRouter.get("/orders", async (req, res) => {
   try {
-    const companyId = req.companyId; // companyAuth middleware sets this
+    const companyId = req.companyId; 
     const orders = await orderModel.find({ companyId })
       .populate("wasteId")
       .populate("farmerId")
@@ -106,6 +105,59 @@ companyRouter.get("/orders", async (req, res) => {
     res.json(orders);
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+companyRouter.get("/profile",    async (req, res) => {
+  try {
+    const companyId = req.companyId; 
+
+    const company = await companyModel
+      .findById(companyId)
+      .select("-companyPassword");
+
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    res.json(company);
+  } catch (error) {
+    console.error("Error fetching company profile:", error.message);
+    res.status(500).json({
+      message: "Error fetching company profile",
+      error: error.message,
+    });
+  }
+});
+
+
+companyRouter.put("/profile",  async (req, res) => {
+  try {
+    const companyId = req.companyId;
+    const updates = req.body;
+
+    delete updates.companyPassword;
+
+    const updatedCompany = await companyModel
+      .findByIdAndUpdate(companyId, updates, {
+        new: true,
+        runValidators: true,
+      })
+      .select("-companyPassword");
+
+    if (!updatedCompany) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    res.json({
+      message: "Profile updated successfully",
+      company: updatedCompany,
+    });
+  } catch (error) {
+    console.error("Error updating company profile:", error.message);
+    res.status(400).json({
+      message: "Error updating profile",
+      error: error.message,
+    });
   }
 });
 export{companyRouter}

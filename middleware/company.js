@@ -1,18 +1,24 @@
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 
 const COMPANY_SECRET = process.env.COMPANY_SECRET;
 
-export default function companyAuth(req,res,next){
-    const AuthHeader = req.headers.authorization
+export default function companyAuth(req, res, next) {
+  try {
+    const authHeader = req.headers.authorization;
 
-    const verify = jwt.verify(AuthHeader,COMPANY_SECRET);
-
-    if(verify){
-        req.companyId = verify.id;
-        next()
-    }else{
-        res.json({
-            message:'Something Went rong'
-        })
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "No token provided or invalid format" });
     }
+
+    const token = authHeader.split(" ")[1];
+
+    const verify = jwt.verify(token, COMPANY_SECRET);
+
+    req.companyId = verify.id;
+
+    next();
+  } catch (err) {
+    console.error("Company Auth Error:", err.message);
+    res.status(401).json({ message: "Invalid or expired token" });
+  }
 }

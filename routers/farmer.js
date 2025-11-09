@@ -1,14 +1,14 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { Router } from 'express';
-import { createWasteModel, farmerModel } from '../db.js';
+import { createWasteModel, farmerModel,orderModel } from '../db.js';
 import farmerAuth from '../middleware/farmer.js';
 const FARMER_SECRET =process.env.FARMER_SECRET
 const farmerRouter = Router()
 
 farmerRouter.post('/signup',async(req,res)=>{
     const {farmerName,farmerEmail,farmerPhone,farmerPassword,farmerStreet,farmerVillage,farmerPincode,farmerBio} =req.body;
-
+    console.log(req.body)
     const farmerExists = await farmerModel.findOne({
         farmerEmail:farmerEmail
     })
@@ -41,7 +41,7 @@ farmerRouter.post('/login',async(req,res)=>{
     const farmerExists = await farmerModel.findOne({
         farmerEmail
     })
-    const hashedPass = bcrypt.compare(farmerPassword,farmerExists.farmerPassword)
+    const hashedPass = await bcrypt.compare(farmerPassword,farmerExists.farmerPassword)
 
     if(farmerExists&&hashedPass){
         const token = jwt.sign({id:farmerExists._id},
@@ -56,8 +56,9 @@ farmerRouter.post('/login',async(req,res)=>{
         })
     }
 })
+
 farmerRouter.use(farmerAuth);
-farmerRouter.post('/creteWaste',async (req,res)=>{
+farmerRouter.post('/createWaste',async (req,res)=>{
     const farmerId = req.farmerId;
     const {wasteType,wasteQuantity,wasteDescription,wasteImage} = req.body;
 
@@ -86,18 +87,84 @@ farmerRouter.get('/wasteList',async (req,res)=>{
 })
 
 
-// 🧑‍🌾 1️⃣ Get all orders for a specific farmer
-farmerRouter.get("/orders", farmerAuth, async (req, res) => {
-  try {
-    const farmerId = req.farmer.id; // farmerAuth middleware sets this
-    const orders = await orderModel.find({ farmerId })
-      .populate("wasteId")
-      .populate("companyId")
-      .populate("adminId");
 
-    res.json(orders);
+farmerRouter.get("/orders", async (req, res) => {
+  try {
+    const farmerId = req.farmerId; 
+
+    if (!farmerId) {
+      return res.status(401).json({ message: "Unauthorized: Missing farmer ID" });
+    }
+
+    const orders = await orderModel
+      .find({ farmerId })
+      .populate({
+        path: "wasteId",
+        select: "wasteType wasteQuantity wasteDescription wasteImage",
+      })
+      .populate({
+        path: "companyId",
+        select: "companyName companyEmail companyPhone companyVillage",
+      })
+      .populate({
+        path: "adminId",
+        select: "adminName adminEmail",
+      })
+      .sort({ createdAt: -1 }); 
+
+    if (!orders.length) {
+      return res.json({ message: "No orders found for this farmer", orders: [] });
+    }
+
+    res.json({
+      message: "Orders fetched successfully",
+      totalOrders: orders.length,
+      orders,
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Error fetching farmer orders:", error.message);
+    res.status(500).json({
+      message: "Error fetching orders",
+      error: error.message,
+    });
+  }
+});
+
+
+farmerRouter.get("/profile",  async (req, res) => {
+  try {
+    const farmerId = req.farmerId; 
+    const farmer = await farmerModel.findById(farmerId).select("-farmerPassword");
+    if (!farmer) {
+      return res.status(404).json({ message: "Farmer not found" });
+    }
+    res.json(farmer);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching farmer profile", error: error.message });
+  }
+});
+
+farmerRouter.put("/profile",  async (req, res) => {
+  try {
+    const farmerId = req.farmerId;
+    const updates = req.body;
+
+    delete updates.farmerPassword;
+
+    const updatedFarmer = await farmerModel
+      .findByIdAndUpdate(farmerId, updates, { new: true, runValidators: true })
+      .select("-farmerPassword");
+
+    if (!updatedFarmer) {
+      return res.status(404).json({ message: "Farmer not found" });
+    }
+
+    res.json({
+      message: "Profile updated successfully",
+      farmer: updatedFarmer,
+    });
+  } catch (error) {
+    res.status(400).json({ message: "Error updating profile", error: error.message });
   }
 });
 

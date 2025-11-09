@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { Router } from 'express';
-import { adminModel, createWasteModel, orderModel } from '../db.js';
+import { adminModel, createWasteModel, orderModel,farmerModel,companyModel } from '../db.js';
 import adminAuth from '../middleware/admin.js'; 
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET
@@ -58,67 +58,101 @@ adminRouter.post('/login',async(req,res)=>{
 })
 
 adminRouter.use(adminAuth);
-//1.accepted waste 
-adminRouter.get("/accepted-wastes", adminAuth, async (req, res) => {
+
+adminRouter.get("/acceptedWastes", async (req, res) => {
   try {
-    const wastes = await createWasteModel.find({ isAccepted: true })
+    const existingOrders = await orderModel.find().select("wasteId");
+    const orderedWasteIds = existingOrders.map((o) => o.wasteId.toString());
+
+    const wastes = await createWasteModel
+      .find({
+        isAllocated: true,
+        isAccepted: false, 
+        _id: { $nin: orderedWasteIds }, 
+      })
       .populate("farmer")
       .populate("companyId");
+
     res.json(wastes);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// 2️⃣ Admin creates an order for an accepted waste
-adminRouter.post("/create-order/:wasteId", adminAuth, async (req, res) => {
+adminRouter.post("/createOrder/:wasteId", async (req, res) => {
   try {
     const { price } = req.body;
     const { wasteId } = req.params;
-   const adminId = req.adminId; // ✅ matches adminAuth
- // assuming adminAuth sets req.admin
+    const adminId = req.adminId; 
+
 
     const waste = await createWasteModel.findById(wasteId);
-    if (!waste) return res.status(404).json({ message: "Waste not found" });
+    if (!waste) {
+      return res.status(404).json({ message: "Waste not found" });
+    }
+
+    const existingOrder = await orderModel.findOne({ wasteId });
+    if (existingOrder) {
+      return res
+        .status(400)
+        .json({ message: "Order already exists for this waste" });
+    }
+
 
     const order = await orderModel.create({
       wasteId,
-      farmerId: waste.farmer, 
-      companyId: waste.companyId,
+      farmerId: waste.farmer,
+      companyId: waste.companyId || null,
       adminId,
       price,
     });
 
-    // mark as allocated
-    waste.isAllocated = true;
+    waste.isAccepted = true;
     await waste.save();
 
-    res.json(order);
+    res.status(201).json({
+      message: "Order created successfully",
+      order,
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// 3️⃣ Update order price, status, or payment
-adminRouter.put("/update-order/:orderId", adminAuth, async (req, res) => {
+
+adminRouter.put("/updateOrder/:orderId", async (req, res) => {
   try {
     const { price, orderStatus, paymentStatus } = req.body;
+
     const updatedOrder = await orderModel.findByIdAndUpdate(
       req.params.orderId,
-      { price, orderStatus, paymentStatus, updatedAt: Date.now() },
+      {
+        ...(price !== undefined && { price }),
+        ...(orderStatus && { orderStatus }),
+        ...(paymentStatus && { paymentStatus }),
+        updatedAt: Date.now(),
+      },
       { new: true }
     );
 
-    res.json(updatedOrder);
+    if (!updatedOrder) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    res.json({
+      message: "Order updated successfully",
+      updatedOrder,
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-//get all orders
-adminRouter.get("/all-orders", adminAuth, async (req, res) => {
+
+adminRouter.get("/allOrders", async (req, res) => {
   try {
-    const orders = await orderModel.find()
+    const orders = await orderModel
+      .find()
       .populate("wasteId")
       .populate("farmerId")
       .populate("companyId")
@@ -130,4 +164,49 @@ adminRouter.get("/all-orders", adminAuth, async (req, res) => {
   }
 });
 
+
+adminRouter.get("/myOrders", async (req, res) => {
+  try {
+    const adminId = req.adminId;
+    const orders = await orderModel
+      .find({ adminId })
+      .populate("wasteId")
+      .populate("farmerId")
+      .populate("companyId");
+
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+adminRouter.get("/allWastes", async (req, res) => {
+  try {
+    const wastes = await createWasteModel.find()
+      .populate("farmer")
+      .populate("companyId");
+    res.json(wastes);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+adminRouter.get("/allCompanies", async (req, res) => {
+  try {
+    const companies = await companyModel.find();
+    res.json(companies);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+adminRouter.get("/allFarmers", async (req, res) => {
+  try {
+    const farmers = await farmerModel.find();
+    res.json(farmers);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 export { adminRouter };

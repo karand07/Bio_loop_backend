@@ -6,6 +6,12 @@ import mongoose from 'mongoose';
 import {farmerRouter} from './routers/farmer.js'
 import {companyRouter} from './routers/company.js'
 import { adminRouter } from './routers/admin.js';
+import cors from 'cors';
+app.use(cors({
+  origin: "http://localhost:5173",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
 app.use(express.json());
 app.use('/farmer',farmerRouter);
 app.use('/company',companyRouter);

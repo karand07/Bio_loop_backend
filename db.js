@@ -2,7 +2,6 @@ import mongoose, { Schema } from "mongoose";
 const ObjectId = mongoose.Types.ObjectId
 
 
-//Farmer Schema
 const farmerSchema = new Schema({
     farmerName: {
       type: String,
@@ -48,7 +47,7 @@ const farmerSchema = new Schema({
       default: "",
     }
 })
-//company Schema 
+
 const companySchema = new Schema({
     companyName: {
       type: String,
@@ -94,15 +93,16 @@ const companySchema = new Schema({
       default: "",
     }
 })
+
 const createWasteSchema = new Schema({
     farmer: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Farmer", // Reference to Farmer collection
+      ref: "farmer", 
       required: true,
     },
     companyId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Company'
+    ref: 'company'
   },
     wasteType: {
       type: String,
@@ -120,14 +120,14 @@ const createWasteSchema = new Schema({
       trim: true,
     },
     wasteImage: {
-      type: String, // URL or file path
+      type: String, 
       default: "",
     },
      isAllocated: {
     type: Boolean,
     default: false
   },
-  isAccepted: {         // <-- New field
+  isAccepted: {         
     type: Boolean,
     default: false
   }
